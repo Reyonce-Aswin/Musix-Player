@@ -1,1 +1,8 @@
-g++ src/*.cpp -Iinclude -o player.exe -lportaudio -lsndfile
+g++ src/*.cpp `
+-Iinclude `
+-std=c++17 `
+-o player.exe `
+-lportaudio `
+-lsndfile `
+-pthread `
+-Wall

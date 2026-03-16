@@ -1,40 +1,30 @@
 #pragma once
 
-#include "AudioFile.h"
 #include "AudioEngine.h"
-
-#include <thread>
-#include <atomic>
 #include <string>
 
-class Player {
+// Player class provides a high-level interface for audio playback
+class Player
+{
 public:
+    // Constructor: Initializes the player with an audio file path
     Player(const std::string& path);
+    // Destructor: Cleans up player resources
     ~Player();
 
-    void play();
-    void pause();
-    void resume();
-    void stop();
+    // Playback control methods
+    bool play();           // Starts audio playback
+    void togglePause();    // Toggles between play and pause
+    void toggleLoop();     // Toggles loop mode on/off
+    void toggleMute();     // Toggles mute on/off
+    void stop();           // Stops playback
 
-    void togglePause();
-    void toggleLoop();
-    void toggleMute();
-
-    void setLoop(bool enabled);
+    // Status and information methods
+    bool isStopped() const; // Returns true if player is stopped
+    void printStatus();     // Prints current playback status
+    
 
 private:
-    void playbackLoop();
-
-    AudioFile audioFile;
-    AudioEngine audioEngine;
-
-    std::thread playbackThread;
-
-    std::atomic<bool> playing;
-    std::atomic<bool> paused;
-    std::atomic<bool> stopRequested;
-    std::atomic<bool> loopEnabled;
-
-    std::atomic<bool> muted;
+    std::string filePath;     // Path to the audio file
+    AudioEngine audioEngine;  // Underlying audio engine instance
 };

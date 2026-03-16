@@ -1,124 +1,62 @@
 #include "Player.h"
-#include <vector>
 #include <iostream>
-#include <chrono>
-#include <algorithm>
 
-#define FRAMES_PER_BUFFER 512
-
+// Constructor: Initializes the Player with the audio file path
 Player::Player(const std::string& path)
-    : audioFile(path),
-      playing(false),
-      paused(false),
-      muted(false),
-      stopRequested(false),
-      loopEnabled(true)   // loop is default behavior
+    : filePath(path)
 {
 }
 
-Player::~Player() {
+// Destructor: Stops playback when the Player object is destroyed
+Player::~Player()
+{
     stop();
 }
 
-void Player::setLoop(bool enabled) {
-    loopEnabled = enabled;
-}
-
-void Player::play() {
-    if (playing) return;
-
-    if (!audioFile.isOpen()) {
-        std::cerr << "Audio file not open.\n";
-        return;
+// Starts audio playback by loading the file and starting the engine
+bool Player::play()
+{
+    if (!audioEngine.loadFile(filePath.c_str()))
+    {
+        std::cerr << "Failed to load file\n";
+        return false;
     }
 
-    audioFile.rewind();  // Always start from beginning
-
-    if (!audioEngine.init(audioFile.getSampleRate(),
-                          audioFile.getChannels())) {
-        return;
-    }
-
-    if (!audioEngine.start()) {
-        return;
-    }
-
-    stopRequested = false;
-    paused = false;
-    playing = true;
-
-    playbackThread = std::thread(&Player::playbackLoop, this);
+    return audioEngine.start();
 }
 
-void Player::pause() {
-    if (playing)
-        paused = true;
+// Toggles between play and pause states
+void Player::togglePause()
+{
+    audioEngine.pause();
 }
 
-void Player::resume() {
-    if (playing)
-        paused = false;
+// Toggles loop playback mode on or off
+void Player::toggleLoop()
+{
+    audioEngine.toggleLoop();
 }
 
-void Player::togglePause() {
-    if (!playing) return;
-    paused = !paused;
+// Toggles mute state on or off
+void Player::toggleMute()
+{
+    audioEngine.toggleMute();
 }
 
-void Player::toggleLoop() {
-    loopEnabled = !loopEnabled;
-}
-
-void Player::toggleMute() {
-    muted = !muted;
-}
-
-void Player::stop() {
-
-    stopRequested = true;
-
-    if (playbackThread.joinable())
-        playbackThread.join();
-
+// Stops audio playback
+void Player::stop()
+{
     audioEngine.stop();
-
-    paused = false;
-    playing = false;
 }
 
-void Player::playbackLoop() {
+// Checks if the player is in stopped state
+bool Player::isStopped() const
+{
+    return audioEngine.getState() == PlayerState::Stopped;
+}
 
-    std::vector<float> buffer;
-    sf_count_t framesRead;
-
-    while (!stopRequested) {
-
-        if (paused) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            continue;
-        }
-
-        framesRead = audioFile.readFrames(buffer, FRAMES_PER_BUFFER);
-
-        if (framesRead > 0) {
-
-            if (!muted) {
-                audioEngine.write(buffer, framesRead);
-            }
-            else {
-                std::fill(buffer.begin(), buffer.end(), 0.0f);
-                audioEngine.write(buffer, framesRead);
-            }
-
-        } else {
-
-            if (loopEnabled) {
-                audioFile.rewind();
-            } else {
-                break;
-            }
-        }
-    }
-
-    playing = false;
+// Prints the current playback status
+void Player::printStatus()
+{
+    audioEngine.printStatus();
 }
